@@ -11,6 +11,8 @@ from engine_draw import Color
 def RGB888to565(c):
     return ((c[0] >> 3) << 11) | ((c[1] >> 2) << 5) | c[2] >> 3
 
+tA = False
+direction = 1
 doMovement = True
 blocksTex = engine_resources.TextureResource("Images/blocks.bmp")
 playerTex = engine_resources.TextureResource("Images/player.bmp")
@@ -25,6 +27,7 @@ def generateMap(image_path):
 
     tilemap = EmptyNode()
     tilemap.layer = 0  
+    tilemap.position = Vector2(0,0)
     
     start_x = -((TILE_COLS * TILE_WIDTH) // 2)
     start_y = -((TILE_ROWS * TILE_HEIGHT) // 2)
@@ -53,8 +56,6 @@ def generateMap(image_path):
     rootMap = EmptyNode()
     rootMap.add_child(tilemap)
 
-map = generateMap("Images/blocks.bmp")
-
 def createPlayer():
     TILE_WIDTH = 18
     TILE_HEIGHT = 9 
@@ -82,21 +83,32 @@ def createPlayer():
     return player
 
 def updatePlayer():
+    if not doMovement:
+        return
     global playercol
     global playerrow
+    global direction
     TILE_WIDTH = 18   
     TILE_HEIGHT = 9
     move_col = 0
     move_row = 0
 
-    if engine_io.UP.is_just_pressed:  
+    if engine_io.UP.is_just_pressed:
+        direction = 1
         move_row -= 1
-    if engine_io.DOWN.is_just_pressed:  
+        print(f"Direction: {direction}")
+    if engine_io.DOWN.is_just_pressed:
+        direction = 2
         move_row += 1
-    if engine_io.LEFT.is_just_pressed:  
+        print(f"Direction: {direction}")
+    if engine_io.LEFT.is_just_pressed:
+        direction = 3
         move_col -= 1
-    if engine_io.RIGHT.is_just_pressed:  
+        print(f"Direction: {direction}")
+    if engine_io.RIGHT.is_just_pressed:
+        direction = 4
         move_col += 1
+        print(f"Direction: {direction}")
     
     playercol += move_col
     playerrow += move_row
@@ -104,8 +116,21 @@ def updatePlayer():
     player.position.x = (playercol - playerrow) * (TILE_WIDTH // 2) + 1
     player.position.y = (playercol + playerrow) * (TILE_HEIGHT // 2) + 3
 
+def animate(node: Sprite2DNode, aNum: int):
+    node.playing = True
+
+def animStop(node):
+    node.playing = False
+
 player = createPlayer()
+map = generateMap("Images/blocks.bmp")
 
 while True:
     if engine.tick():
         updatePlayer()
+        if engine_io.A.is_just_pressed:
+            doMovement = not doMovement
+        if engine_io.B.is_just_pressed:
+            if tA: tA = not tA; animStop(player); print("Started animating")
+            else: tA = not tA; animate(player, 1); print("Stopped animating")
+            
