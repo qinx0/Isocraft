@@ -1,12 +1,12 @@
-import engine_main  
-import engine  
-import engine_io  
-import engine_draw  
-import engine_resources  
+import engine_main # type: ignore
+import engine # type: ignore
+import engine_io # type: ignore
+import engine_resources # type: ignore
 import random
-from engine_nodes import Sprite2DNode, CameraNode, Text2DNode, Rectangle2DNode, EmptyNode  
-from engine_math import Vector2  
-from engine_draw import Color  
+import engine_audio # type: ignore
+from engine_nodes import Sprite2DNode, CameraNode, Text2DNode, Rectangle2DNode, EmptyNode # type: ignore
+from engine_math import Vector2 # type: ignore
+from engine_draw import Color # type: ignore
 
 def RGB888to565(c):
     return ((c[0] >> 3) << 11) | ((c[1] >> 2) << 5) | c[2] >> 3
@@ -15,12 +15,17 @@ aFrame = 0
 aFinished = True
 incrementAFrame = False
 frameDelayCounter = 0
-frameDelayMax = 45
+frameDelayMax = 5
 doMovement = True
 
 direction = 1
 blocksTex = engine_resources.TextureResource("Images/blocks.bmp")
 playerTex = engine_resources.TextureResource("Images/player.bmp")
+
+# sfxChannel = AudioChannel()
+# sfxChannel.loop = False
+sfx = [engine_resources.WaveSoundResource("Audio/step-click.wav")]
+engine_audio.set_volume(1.0)
 
 def generateMap(image_path):
     TILE_WIDTH = 16
@@ -98,7 +103,6 @@ def updatePlayer():
     TILE_HEIGHT = 9
     move_col = 0
     move_row = 0
-
     
     if engine_io.UP.is_just_pressed:
         direction = 0  
@@ -114,12 +118,10 @@ def updatePlayer():
         move_col += 1
     else:
         return  
-
     
     doMovement = False
     aFinished = False
     incrementAFrame = True
-
     
     playercol += move_col
     playerrow += move_row
@@ -131,27 +133,25 @@ def animate(node: Sprite2DNode, animationNum: int, steps: int, framedelay: int):
 
     if aFinished:
         return  
-
     
     if frameDelayCounter < framedelay:
         frameDelayCounter += 1
         return
     frameDelayCounter = 0  
-
     
     if aFrame < steps:
         node.frame_current_x = animationNum  
         node.frame_current_y = aFrame - 1  
+        engine_audio.play(sfx[0],3,False)
         aFrame += 1
     else:
         aFrame = 0
         aFinished = True
         incrementAFrame = False
-        node.frame_current_x, node.frame_current_y = animationNum, aFrame+1  
-
+        node.frame_current_x, node.frame_current_y = animationNum, aFrame+1
+        engine_audio.stop(3)
         
-        doMovement = True  
-
+        doMovement = True
 
 player = createPlayer()
 map = generateMap("Images/blocks.bmp")
@@ -159,6 +159,4 @@ map = generateMap("Images/blocks.bmp")
 while True:
     if engine.tick():
         updatePlayer()
-        animate(player, direction, 3, frameDelayMax)
-        if engine_io.A.is_just_pressed:
-            doMovement = not doMovement         
+        animate(player, direction, 3, frameDelayMax)       
