@@ -21,6 +21,8 @@ doMovement = True
 direction = 1
 blocksTex = engine_resources.TextureResource("Images/blocks.bmp")
 playerTex = engine_resources.TextureResource("Images/player.bmp")
+pending_move_col = 0
+pending_move_row = 0
 
 # sfxChannel = AudioChannel()
 # sfxChannel.loop = False
@@ -94,64 +96,75 @@ def createPlayer():
     return player
 
 def updatePlayer():
-    global playercol, playerrow, direction, aFrame, aFinished, incrementAFrame, doMovement
+    global direction, aFrame, aFinished, incrementAFrame
+    global doMovement, pending_move_col, pending_move_row
 
-    if not doMovement:  
+    if not doMovement or not aFinished:
         return
 
-    TILE_WIDTH = 16
-    TILE_HEIGHT = 9
     move_col = 0
     move_row = 0
-    
+
     if engine_io.UP.is_just_pressed:
-        direction = 0  
+        direction = 0
         move_row -= 1
     elif engine_io.DOWN.is_just_pressed:
-        direction = 2  
+        direction = 2
         move_row += 1
     elif engine_io.LEFT.is_just_pressed:
-        direction = 3  
+        direction = 3
         move_col -= 1
     elif engine_io.RIGHT.is_just_pressed:
-        direction = 1  
+        direction = 1
         move_col += 1
     else:
-        return  
-    
+        return
+
     doMovement = False
     aFinished = False
     incrementAFrame = True
-    
-    playercol += move_col
-    playerrow += move_row
-    player.position.x = (playercol - playerrow) * (TILE_WIDTH // 2) + 1
-    player.position.y = (playercol + playerrow) * (TILE_HEIGHT // 2) + 5
+
+    # Store intended movement
+    pending_move_col = move_col
+    pending_move_row = move_row
+
 
 def animate(node: Sprite2DNode, animationNum: int, steps: int, framedelay: int):
     global aFrame, aFinished, incrementAFrame, frameDelayCounter, doMovement
+    global playercol, playerrow, pending_move_col, pending_move_row
 
     if aFinished:
-        return  
-    
+        return
+
     if frameDelayCounter < framedelay:
         frameDelayCounter += 1
         return
-    frameDelayCounter = 0  
-    
+    frameDelayCounter = 0
+
     if aFrame < steps:
-        node.frame_current_x = animationNum  
-        node.frame_current_y = aFrame - 1  
-        engine_audio.play(sfx[0],3,False)
+        node.frame_current_x = animationNum
+        node.frame_current_y = aFrame
+        engine_audio.play(sfx[0], 3, False)
         aFrame += 1
     else:
         aFrame = 0
         aFinished = True
         incrementAFrame = False
-        node.frame_current_x, node.frame_current_y = animationNum, aFrame+1
         engine_audio.stop(3)
-        
+
+        # Apply the movement now
+        TILE_WIDTH = 16
+        TILE_HEIGHT = 9
+        playercol += pending_move_col
+        playerrow += pending_move_row
+        node.position.x = (playercol - playerrow) * (TILE_WIDTH // 2) + 1
+        node.position.y = (playercol + playerrow) * (TILE_HEIGHT // 2) + 5
+
+        # Reset movement state
+        pending_move_col = 0
+        pending_move_row = 0
         doMovement = True
+
 
 player = createPlayer()
 map = generateMap("Images/blocks.bmp")
