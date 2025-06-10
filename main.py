@@ -31,19 +31,19 @@ Font5x7 = engine_resources.FontResource("Font/5x7Font.bmp")
 sfx = [engine_resources.WaveSoundResource("Audio/step-click.wav")]
 engine_audio.set_volume(1.0)
 
-class debug():
+class debugText():
     def __init__(self, position, font):
         self.dText = Text2DNode(position = position, font = font)
         
-    def Println(self, Text: str):
+    def debugPrintln(self, Text: str):
         if not len(str(self.dText.text)) > 32:
-            self.dText.text = self.dText.text + Text
-        else: return
+            self.dText.text = str(self.dText.text) + str(Text)
+        # else: self.dText.text = ""
     
-    def Print(self, Text: str):
+    def debugPrint(self, Text: str):
         if not len(str(self.dText.text)) > 32:
             self.dText.text = str(self.dText.text) + str('\n'+Text)
-        else: return
+        # else: self.dText.text = ""
 
 def generateMap(image_path):
     TILE_WIDTH = 16
@@ -184,10 +184,12 @@ def animate(node: Sprite2DNode, animationNum: int, steps: int, framedelay: int):
 
 player = createPlayer()
 map = generateMap("Images/blocks.bmp")
-debugText = debug(Vector2(-32,-32), Font5x7)
+d = debugText(Vector2(-32,-32), Font5x7)
+player.add_child(d)
 
 while True:
     if engine.tick():
+        # print("Frame running")
         updatePlayer()
         animate(player, direction, 3, frameDelayMax)
-        debugText.Print(f'Ppos: {player.position}')  
+        d.debugPrint(f'Ppos: ({player.position.x},{player.position.y})')  
